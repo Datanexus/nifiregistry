@@ -1,0 +1,16 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+# apply AWS nifi registry security group rules for multi-interface systems
+---
+# this is only necessary when modifying interface 0
+- name: NIFI REGISTRY ({{ cloud }}) | getting id of default security group
+  ec2_group_facts:
+    region: "{{ region }}"
+    filters:
+      group-name: "dnsg_{{ project }}_ssh_private_internal"
+      vpc-id: "{{ specified_vpc.vpcs.0.id }}"
+  register: sg_ssh_private
+  when: cloud =="aws"
+
+- import_tasks: apply-registry.yml

@@ -1,0 +1,112 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+---
+# this play needs to be first to handle variable expansion
+- import_tasks: tune.yml
+
+- import_tasks: interface-facts.yml
+
+- set_fact:
+    registry_user: "{{ registry.user | default(ansible_user) }}"
+
+- set_fact:
+    registry_group: "{{ registry.group | default (ansible_user) }}"
+
+- block:
+
+  - name: NIFI REGISTRY ({{ cloud }}) | setting registry run as user to {{ registry_user }}
+    lineinfile:
+      path: "{{ registry.install_dir }}/{{ registry.service_name }}-{{ registry.version }}/{{ registry.bootstrap_file }}"
+      regexp: '^run.as='
+      line: "run.as={{ registry_user }}"
+    notify: restart registry
+
+  - name: NIFI REGISTRY ({{ cloud }}) | tuning nifi registry for {{ jvm_heap_mem }}g maximum memory
+    lineinfile:
+      path: "{{ registry.install_dir }}/{{ registry.service_name }}-{{ registry.version }}/{{ registry.bootstrap_file }}"
+      regexp: '^java.arg.3=-Xmx'
+      line: "java.arg.3=-Xmx{{ jvm_heap_mem }}g"
+    notify: restart registry
+
+  - name: NIFI REGISTRY ({{ cloud }}) | configuring nifi registry web http address as {{ registry_interface_ipv4 }}
+    lineinfile:
+      path: "{{ registry.install_dir }}/{{ registry.service_name }}-{{ registry.version }}/{{ registry.config_file }}"
+      regexp: '^nifi.registry.web.http.host='
+      line: "nifi.registry.web.http.host={{ registry_interface_ipv4 }}"
+    notify: restart registry
+
+  - name: NIFI REGISTRY ({{ cloud }}) | configuring nifi registry port on {{ registry.config.port }}
+    lineinfile:
+      path: "{{ registry.install_dir }}/{{ registry.service_name }}-{{ registry.version }}/{{ registry.config_file }}"
+      regexp: '^nifi.registry.web.http.port='
+      line: "nifi.registry.web.http.port={{ registry.config.port }}"
+    notify: restart registry
+  
+  - name: NIFI REGISTRY ({{ cloud }}) | configuring nifi registry database at {{ registry.config.dataDir }}/database
+    lineinfile:
+      path: "{{ registry.install_dir }}/{{ registry.service_name }}-{{ registry.version }}/{{ registry.config_file }}"
+      regexp: '^nifi.registry.db.url='
+      line: "nifi.registry.db.url=jdbc:h2:{{ registry.config.dataDir }}/database/nifi-registry-primary;AUTOCOMMIT=OFF;DB_CLOSE_ON_EXIT=FALSE;LOCK_MODE=3;LOCK_TIMEOUT=25000;WRITE_DELAY=0;AUTO_SERVER=FALSE"
+    notify: restart registry
+  
+  - name: NIFI REGISTRY ({{ cloud }}) | configuring nifi registry flow storage provider
+    replace:
+      path: "{{ registry.install_dir }}/{{ registry.service_name }}-{{ registry.version }}/{{ registry.providers_file }}"
+      regexp: '\./flow_storage'
+      replace: "{{ registry.config.dataDir }}/flow_storage"
+    notify: restart registry
+  
+  - name: NIFI REGISTRY ({{ cloud }}) | configuring nifi registry extension bundles provider
+    replace:
+      path: "{{ registry.install_dir }}/{{ registry.service_name }}-{{ registry.version }}/{{ registry.providers_file }}"
+      regexp: '\./extension_bundles'
+      replace: "{{ registry.config.dataDir }}/extension_bundles"
+    notify: restart registry
+    
+  - name: NIFI REGISTRY ({{ cloud }}) | installing systemd {{ registry.service_name }}
+    template:
+      src: nifi-registry.service.j2
+      dest: "/etc/systemd/system/{{ registry.service_name }}.service"
+      mode: 0644
+      owner: root
+      group: root
+    notify:
+      - reload systemd
+      - restart registry
+    when: 
+      - ansible_distribution_version is version_compare('7', '>=')
+  
+  - name: NIFI REGISTRY ({{ cloud }}) | ensuring {{ registry.config.dataDir }} directories exist and have the correct permissions for {{ registry.service_name }}
+    file:
+      path: "{{ item }}"
+      owner: "{{ registry_user }}"
+      group: "{{ registry_group }}"
+      state: directory
+      mode: 0750
+    with_items:
+      - "{{ registry.config.dataDir }}/database"
+      - "{{ registry.config.dataDir }}/flow_storage"
+      - "{{ registry.config.dataDir }}/extension_bundles"
+
+  # jesus christ -- nifi registry uses sudo in the nifi-registry.sh startup script so we need to make sure the nifi user has privs
+  - name: NIFI REGISTRY ({{ cloud }}) | ensuring user {{ registry_user }} has sudo privileges
+    lineinfile:
+      path: "/etc/sudoers.d/020_sudo_{{ registry_user }}"
+      create: yes
+      regexp: '^{{ registry_user }}'
+      line: "{{ registry_user }}    ALL=(ALL)   NOPASSWD: ALL"
+    when: 
+      - ansible_distribution_version is version_compare('7', '>=')
+      
+  - name: NIFI REGISTRY ({{ cloud }}) | starting {{ registry.service_name }} by systemd
+    systemd:
+      name: "{{ registry.service_name }}"
+      enabled: yes
+      state: started
+    when: 
+      - ansible_distribution_version is version_compare('7', '>=')
+
+  become: yes
+  when:
+    - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'

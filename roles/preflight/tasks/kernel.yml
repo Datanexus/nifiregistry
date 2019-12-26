@@ -1,0 +1,163 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+#
+# linux kernel tuning
+---
+- block:
+  
+  - set_fact:
+      dn_file_max: "{{ kernel.config.fs_file_max }}"
+    when: kernel.config.fs_file_max
+  
+  - set_fact:
+      dn_file_max: "{{ linux.kernel.config.fs_file_max }}"
+    when:
+      - dn_file_max is undefined
+      - linux.kernel.config.fs_file_max
+    
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring maximum number of file handles
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: fs.file-max
+      value: "{{ dn_file_max }}"      
+    when: dn_file_max is defined
+  
+  - set_fact:
+      dn_core_pattern: "{{ kernel.config.core_pattern }}"
+    when: kernel.config.core_pattern
+  
+  - set_fact:
+      dn_core_pattern: "{{ linux.kernel.config.core_pattern }}"
+    when:
+      - dn_core_pattern is undefined
+      - linux.kernel.config.core_pattern
+      
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring core dump pattern
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: kernel.core_pattern
+      value: "{{ dn_core_pattern }}"
+    when: dn_core_pattern is defined
+  
+  - set_fact:
+      dn_msgmni: "{{ kernel.config.msgmni }}"
+    when: kernel.config.msgmni
+  
+  - set_fact:
+      dn_msgmni: "{{ linux.kernel.config.msgmni }}"
+    when:
+      - dn_msgmni is undefined
+      - linux.kernel.config.msgmni
+      
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring maximum number of message queue identifiers
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: kernel.msgmni
+      value: "{{ dn_msgmni }}"
+    when: dn_msgmni is defined
+  
+  - set_fact:
+      dn_pid_max: "{{ kernel.config.pid_max }}"
+    when: kernel.config.pid_max
+  
+  - set_fact:
+      dn_pid_max: "{{ linux.kernel.config.pid_max }}"
+    when:
+      - dn_pid_max is undefined
+      - linux.kernel.config.pid_max
+      
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring maximum pid value
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: kernel.pid_max
+      value: "{{ dn_pid_max }}"
+    when: dn_pid_max is defined
+  
+  - set_fact:
+      dn_sem: "{{ kernel.config.sem }}"
+    when: kernel.config.sem
+  
+  - set_fact:
+      dn_sem: "{{ linux.kernel.config.sem }}"
+    when:
+      - dn_sem is undefined
+      - linux.kernel.config.sem
+      
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring semaphore parameters
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: kernel.sem
+      value: "{{ dn_sem }}"
+    when: dn_sem is defined
+  
+  - set_fact:
+      dn_shmall: "{{ kernel.config.shmall }}"
+    when: kernel.config.shmall
+  
+  - set_fact:
+      dn_shmall: "{{ linux.kernel.config.shmall }}"
+    when:
+      - dn_shmall is undefined
+      - linux.kernel.config.shmall
+      
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring system wide maximum shared memory pages
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: kernel.shmall
+      value: "{{ dn_shmall }}"
+    when: dn_shmall is defined
+  
+  - set_fact:
+      dn_shmmni: "{{ kernel.config.shmmni }}"
+    when: kernel.config.shmmni
+  
+  - set_fact:
+      dn_shmmni: "{{ linux.kernel.config.shmmni }}"
+    when:
+      - dn_shmmni is undefined
+      - linux.kernel.config.shmmni
+      
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring system wide maximum shared memory segments
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: kernel.shmmni
+      value: "{{ dn_shmmni }}"
+    when: dn_shmmni is defined
+  
+  - set_fact:
+      dn_keepalive_time: "{{ kernel.config.tcp_keepalive_time }}"
+    when: kernel.config.tcp_keepalive_time
+  
+  - set_fact:
+      dn_keepalive_time: "{{ linux.kernel.config.tcp_keepalive_time }}"
+    when:
+      - dn_keepalive_time is undefined
+      - linux.kernel.config.tcp_keepalive_time
+      
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring how often TCP sends out keepalive messages
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: kernel.net.ipv4.tcp_keepalive_time
+      value: "{{ dn_keepalive_time }}"
+    when: dn_keepalive_time is defined
+  
+  - set_fact:
+      dn_slow_start: "{{ kernel.config.tcp_slow_start_after_idle }}"
+    when: kernel.config.tcp_slow_start_after_idle
+  
+  - set_fact:
+      dn_slow_start: "{{ linux.kernel.config.tcp_slow_start_after_idle }}"
+    when:
+      - dn_slow_start is undefined
+      - linux.kernel.config.tcp_slow_start_after_idle
+      
+  - name: NIFI REGISTRY ({{ cloud }}) (PREFLIGHT KERNEL) | configuring RFC286 behavior and time out the congestion window
+    sysctl:
+      sysctl_file: "{{ linux.kernel.config_file }}"
+      name: kernel.net.ipv4.tcp_slow_start_after_idle
+      value: "{{ dn_slow_start }}"
+    when: dn_slow_start is defined
+  
+  become: yes
+  when:
+    - got_root | default('yes')
+    - ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'

@@ -1,0 +1,23 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+# create AWS apache nifi registry security group rules
+---
+- name: NIFI REGISTRY ({{ cloud }}) | creating nifi registry security group
+  local_action:
+    module: ec2_group
+    name: "dnsg_{{ project }}_nifi_registry_private_external"
+    description: "nifi ingress and unrestricted egress rules (ansible)"
+    vpc_id: "{{ specified_vpc.vpcs.0.id }}"
+    region: "{{ region }}"
+    rules:
+      - proto: tcp
+        from_port: "{{ registry_port | default(registry.config.port) }}"
+        to_port: "{{ registry_port | default(registry.config.port) }}"
+        cidr_ip: "{{ external_subnet }}"
+    rules_egress:
+      # Allow all outbound
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+  when: "'nifi_registry' in groups | default([])"
+  register: sg_nifi_registry_external

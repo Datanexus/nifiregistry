@@ -1,0 +1,40 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+# configuration variables for linux environments
+linux:
+  limits:
+    config_file: /etc/security/limits.conf
+    soft:
+      config:
+        fsize: unlimited
+        nofile:
+        nproc:
+        core:
+        stack:
+    hard:
+      config:
+        fsize:
+        nofile:
+        nproc:
+        core:
+        stack:
+  kernel:
+    config_file: /etc/sysctl.d/90-override.conf
+    config:
+      fs_file_max:
+      core_pattern:
+      msgmni:
+      pid_max:
+      sem:
+      shmall:
+      shmmni:
+      tcp_keepalive_time:
+      tcp_slow_start_after_idle:
+  vm:
+    config_file: /etc/sysctl.d/90-override.conf
+    config:
+      dirty_ratio:
+      dirty_background_ratio:
+      dirty_writeback_centisecs:
+      dirty_expire_centisecs:
