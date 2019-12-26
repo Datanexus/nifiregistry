@@ -1,0 +1,20 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+registry:
+  version: '0.5.0'
+  install_dir: /usr/local/src
+  config_file: conf/nifi-registry.properties
+  bootstrap_file: conf/bootstrap.conf
+  providers_file: conf/providers.xml
+  service_name: nifi-registry
+  user_service: /usr/local/bin
+  user: nifi
+  group: nifi
+  # environment:
+  config:
+    port: '18080'
+    threads:
+    max_threads:
+    # this needs to be quoted as a string for concatenation purposes
+    dataDir: "{{ registry_data_dir | default('/data') }}"

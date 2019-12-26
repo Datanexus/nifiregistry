@@ -1,0 +1,10 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+# handlers used during confluent installation
+---
+- name: yum-clean-all
+  command: /usr/bin/yum clean all
+  args:
+      warn: no
+  become: yes

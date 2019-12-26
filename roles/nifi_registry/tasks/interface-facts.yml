@@ -1,0 +1,20 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+# automatically set interface facts based on interfaces present
+---
+- name: NIFI REGISTRY ({{ cloud }}) | setting eth0 to all interfaces
+  set_fact:
+    registry_interface: "{{ hostvars[inventory_hostname].ansible_eth0.device }}"
+    registry_interface_ipv4: "{{ hostvars[inventory_hostname].ansible_eth0.ipv4.address }}"
+    registry_broadcast_interface_ipv4: "{{ hostvars[inventory_hostname].ansible_eth0.ipv4.broadcast }}"
+    registry_metrics_interface_ipv4: "{{ hostvars[inventory_hostname].ansible_eth0.ipv4.address }}"
+  when: hostvars[inventory_hostname].ansible_eth0 is defined
+
+- name: NIFI REGISTRY ({{ cloud }}) | setting eth1 to nifi and metrics
+  set_fact:
+    registry_interface: "{{ hostvars[inventory_hostname].ansible_eth1.device }}"
+    registry_interface_ipv4: "{{ hostvars[inventory_hostname].ansible_eth1.ipv4.address }}"
+    registry_broadcast_interface_ipv4: "{{ hostvars[inventory_hostname].ansible_eth1.ipv4.broadcast }}"
+    registry_metrics_interface_ipv4: "{{ hostvars[inventory_hostname].ansible_eth1.ipv4.address }}"
+  when: hostvars[inventory_hostname].ansible_eth1 is defined

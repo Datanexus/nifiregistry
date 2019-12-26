@@ -1,0 +1,9 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+# create AWS nifi registry component security group rules
+---
+# this is only for variable substitution; it has no effect in this play
+-  set_fact: jvm_heap_mem=1
+
+- import_tasks: create-registry.yml

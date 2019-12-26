@@ -1,0 +1,66 @@
+# (c) 2016 DataNexus Inc.  All Rights Reserved.
+# Licensed software not for distribution
+#
+# apache nifi registry installation: https://nifi.apache.org/docs/nifi-registry-docs/index.html
+---
+- set_fact:
+    registry_user: "{{ registry.user}}"
+
+- set_fact:
+    registry_group: "{{ registry.group }}"
+
+- block:
+
+  - name: NIFI REGISTRY ({{ cloud }}) | adding {{ registry_group }} group
+    group:
+      name: "{{ registry_group }}"
+
+  - name: NIFI REGISTRY ({{ cloud }}) | adding {{ registry_user }} user
+    user:
+      name: "{{ registry_user }}"
+      shell: /sbin/nologin
+      home: "{{ registry.install_dir }}/{{ registry.service_name }}-{{ registry.version }}"
+      group: "{{ registry_group }}"
+
+  become: yes
+  when: got_root | default('yes')
+
+- name: NIFI REGISTRY ({{ cloud }}) | checking for {{ registry.install_dir }}/nifi-{{ registry.version }}/conf/nifi-registry.properties
+  stat: path="{{ registry.install_dir }}/nifi-registry-{{ registry.version }}/conf/nifi-registry.properties"
+  register: existing_package
+  become: yes
+  become_user: "{{ registry_user }}"
+    
+- block:
+  
+  - name: NIFI REGISTRY {{ cloud }} | downloading http://www.gtlib.gatech.edu/pub/apache/nifi/nifi-registry/nifi-registry-{{ registry.version }}/nifi-registry-{{ registry.version }}-bin.tar.gz
+    get_url:
+      url: "http://www.gtlib.gatech.edu/pub/apache/nifi/nifi-registry/nifi-registry-{{ registry.version }}/nifi-registry-{{ registry.version }}-bin.tar.gz"
+      dest: /tmp/nifi-registry-bin.tar.gz
+      mode: 0600
+    become: yes
+    become_user: "{{ registry_user }}"
+    
+  - name: NIFI REGISTRY {{ cloud }} | installing /tmp/nifi-registry-bin.tar.gz to {{ registry.install_dir }}
+    unarchive:
+      src: /tmp/nifi-registry-bin.tar.gz
+      dest: "{{ registry.install_dir }}"
+      owner: "{{ registry_user }}"
+      group: "{{ registry_group }}"
+      remote_src: yes
+    become: yes
+
+  - name: NIFI REGISTRY {{ cloud }} | fixing permissions because sigh @ ansible unarchive
+    file:
+      path: "{{ registry.install_dir }}"
+      owner: "{{ registry_user }}"
+      group: "{{ registry_user }}"
+      recurse: yes
+    become: yes
+      
+  when: not existing_package.stat.exists
+
+# we install our own systemd service so leaving this commented for now
+# - name: NIFI REGISTRY {{ cloud }} | installing nifi registry system service
+#   command: "{{ nifi.install_dir }}/nifi-{{ nifi.version }}/bin/nifi.sh install"
+#   become: yes
